@@ -568,6 +568,13 @@ const Globe = (() => {
         }
     }
 
+    function clearMarkers() {
+        while (markerGroup.children.length > 0) {
+            markerGroup.remove(markerGroup.children[0]);
+        }
+        pulseRings = [];
+    }
+
     return {
         init,
         zoomIn,
@@ -576,6 +583,7 @@ const Globe = (() => {
         toggleAutoRotate,
         focusOnLocation,
         addMarker,
+        clearMarkers,
         dispose
     };
 })();

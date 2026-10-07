@@ -1042,6 +1042,26 @@
      */
     function closeDataPanel() {
         elements.dataPanel?.classList.remove('open');
+        
+        // Remove the 2D map marker and popup if they exist
+        if (state.mapMarker && state.leafletMap) {
+            state.leafletMap.removeLayer(state.mapMarker);
+            state.mapMarker = null;
+        }
+        
+        // Reset selected coordinates so the UI returns to a clean state
+        state.selectedLat = null;
+        state.selectedLng = null;
+        
+        // Hide coordinates display
+        if (elements.coordsDisplay) {
+            elements.coordsDisplay.style.display = 'none';
+        }
+        
+        // Remove 3D globe marker
+        if (window.Globe && typeof Globe.clearMarkers === 'function') {
+            Globe.clearMarkers();
+        }
     }
 
     /**
