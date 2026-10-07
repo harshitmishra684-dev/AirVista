@@ -136,8 +136,10 @@
             const { lat, lng } = e.latlng;
             // Remove old marker and any orphaned popups
             if (state.mapMarker) {
+                state.mapMarker.off('popupclose');
                 state.mapMarker.closePopup();
                 map.removeLayer(state.mapMarker);
+                state.mapMarker = null;
             }
             map.closePopup(); // Ensure all popups are cleared
 
@@ -194,8 +196,13 @@
     function showMapMarkerAndPopup(lat, lng, data, isLoading) {
         if (!state.leafletMap) return;
 
-        // Ensure marker exists
-        if (!state.mapMarker) {
+        // Unbind previous event listener early to prevent synchronous destruction
+        if (state.mapMarker) {
+            state.mapMarker.off('popupclose');
+        }
+
+        // Ensure marker exists and is on the map
+        if (!state.mapMarker || !state.leafletMap.hasLayer(state.mapMarker)) {
             const pulseIcon = L.divIcon({ className: 'map-marker-pulse', iconSize: [20, 20], iconAnchor: [10, 10] });
             state.mapMarker = L.marker([lat, lng], { icon: pulseIcon }).addTo(state.leafletMap);
         } else {
@@ -219,8 +226,6 @@
                     <div class="map-popup-loading">Fetching data</div>
                 `);
             
-            // Unbind previous event listener to prevent synchronous close bug
-            state.mapMarker.off('popupclose');
             state.mapMarker.bindPopup(popup).openPopup();
             state.mapMarker.on('popupclose', onPopupClose);
             return;
@@ -233,7 +238,6 @@
                     <div class="map-popup-coords">${lat.toFixed(4)}°, ${lng.toFixed(4)}°</div>
                     <div style="color: #ef4444; font-size: 12px; margin-top: 5px; word-break: break-word;">${data.message || 'Could not load data for this location'}</div>
                 `);
-            state.mapMarker.off('popupclose');
             state.mapMarker.bindPopup(popup).openPopup();
             state.mapMarker.on('popupclose', onPopupClose);
             return;
@@ -254,7 +258,6 @@
                     <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${category.description.substring(0, 100)}...</div>
                 `);
             
-            state.mapMarker.off('popupclose');
             state.mapMarker.bindPopup(popup).openPopup();
             state.mapMarker.on('popupclose', onPopupClose);
         }
