@@ -134,11 +134,16 @@
         // Click handler — same flow as globe click
         map.on('click', async (e) => {
             const { lat, lng } = e.latlng;
-            
-            // Remove old marker
+            // Remove old marker and any orphaned popups
             if (state.mapMarker) {
+                state.mapMarker.closePopup();
                 map.removeLayer(state.mapMarker);
             }
+            map.closePopup(); // Ensure all popups are cleared
+
+            // Generate a unique ID for this click request to ignore stale responses
+            const requestId = Date.now();
+            state.lastClickRequestId = requestId;
 
             // Add pulsing marker
             const pulseIcon = L.divIcon({
@@ -154,6 +159,10 @@
             // Trigger the same data flow as the globe
             try {
                 const data = await DataService.fetchByCoords(lat, lng);
+                
+                // If a new click happened while fetching, abort updating the UI for this stale request
+                if (state.lastClickRequestId !== requestId) return;
+
                 state.currentData = data;
                 state.selectedLat = lat;
                 state.selectedLng = lng;
@@ -202,7 +211,7 @@
         };
 
         if (isLoading) {
-            const popup = L.popup({ closeOnClick: false, autoClose: false })
+            const popup = L.popup({ closeOnClick: false })
                 .setContent(`
                     <div class="map-popup-title">Loading Air Quality...</div>
                     <div class="map-popup-coords">${lat.toFixed(4)}°, ${lng.toFixed(4)}°</div>
@@ -217,7 +226,7 @@
         }
 
         if (data && data.error) {
-            const popup = L.popup({ closeOnClick: false, autoClose: false })
+            const popup = L.popup({ closeOnClick: false })
                 .setContent(`
                     <div class="map-popup-title">Error</div>
                     <div class="map-popup-coords">${lat.toFixed(4)}°, ${lng.toFixed(4)}°</div>
@@ -231,7 +240,7 @@
             const category = DataService.getAQICategory(data.aqi);
             const sourceLabel = data.source === 'openaq' ? ' (OpenAQ)' : data.source === 'synthetic' ? ' (Estimated)' : '';
 
-            const popup = L.popup({ closeOnClick: false, autoClose: false })
+            const popup = L.popup({ closeOnClick: false })
                 .setContent(`
                     <div class="map-popup-title">${data.city}${sourceLabel}</div>
                     <div class="map-popup-coords">${lat.toFixed(4)}°, ${lng.toFixed(4)}°</div>
