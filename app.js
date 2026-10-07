@@ -178,7 +178,8 @@
 
                 showToast(`Data loaded: ${data.city}`, 'success');
             } catch (error) {
-                showMapMarkerAndPopup(lat, lng, { error: true }, false);
+                console.error(error);
+                showMapMarkerAndPopup(lat, lng, { error: true, message: error.message || error.toString() }, false);
                 showToast('Failed to fetch data', 'error');
             }
         });
@@ -218,9 +219,9 @@
                     <div class="map-popup-loading">Fetching data</div>
                 `);
             
-            state.mapMarker.bindPopup(popup).openPopup();
-            // Need to wait for it to be added to DOM to bind the event
+            // Unbind previous event listener to prevent synchronous close bug
             state.mapMarker.off('popupclose');
+            state.mapMarker.bindPopup(popup).openPopup();
             state.mapMarker.on('popupclose', onPopupClose);
             return;
         }
@@ -230,9 +231,11 @@
                 .setContent(`
                     <div class="map-popup-title">Error</div>
                     <div class="map-popup-coords">${lat.toFixed(4)}°, ${lng.toFixed(4)}°</div>
-                    <div style="color: #ef4444; font-size: 12px;">Could not load data for this location</div>
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 5px; word-break: break-word;">${data.message || 'Could not load data for this location'}</div>
                 `);
+            state.mapMarker.off('popupclose');
             state.mapMarker.bindPopup(popup).openPopup();
+            state.mapMarker.on('popupclose', onPopupClose);
             return;
         }
 
@@ -251,8 +254,8 @@
                     <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">${category.description.substring(0, 100)}...</div>
                 `);
             
-            state.mapMarker.bindPopup(popup).openPopup();
             state.mapMarker.off('popupclose');
+            state.mapMarker.bindPopup(popup).openPopup();
             state.mapMarker.on('popupclose', onPopupClose);
         }
     }
